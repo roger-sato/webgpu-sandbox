@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebGPU Clear Canvas</title>
+    <style>
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="webgpuCanvas"></canvas>
+    <script>
+      async function init() {
+        if (!navigator.gpu) {
+          alert("WebGPU is not supported on your browser");
+          return;
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        const device = await adapter.requestDevice();
+
+        const canvas = document.getElementById("webgpuCanvas");
+        const context = canvas.getContext("webgpu");
+
+        const swapChainFormat = "bgra8unorm";
+
+        const swapChainDescriptor = {
+          device: device,
+          format: swapChainFormat,
+        };
+
+        context.configureSwapChain(swapChainDescriptor);
+
+        function frame() {
+          const commandEncoder = device.createCommandEncoder();
+          const textureView = context.getCurrentTexture().createView();
+
+          const renderPassDescriptor = {
+            colorAttachments: [
+              {
+                view: textureView,
+                loadValue: { r: 0.3, g: 0.7, b: 0.9, a: 1.0 },
+                storeOp: "store",
+              },
+            ],
+          };
+
+          const passEncoder =
+            commandEncoder.beginRenderPass(renderPassDescriptor);
+          passEncoder.endPass();
+
+          device.queue.submit([commandEncoder.finish()]);
+        }
+
+        frame();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
